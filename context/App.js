@@ -10,7 +10,7 @@ Ext.define('Rally.gettingstarted.Context', {
      */
     launch: function() {
         var context = this.getContext();
-
+        console.log(context);
         //Display the current workspace name
         this._displayContextValue(context.getWorkspace().Name); //no need for more verbose _refObjectName
 
@@ -59,18 +59,32 @@ Ext.define('Rally.gettingstarted.Context', {
 
         var globalContext = context.getGlobalContext();
         var globalProjectRef =  Rally.util.Ref.getRelativeUri(globalContext.getProject());
-        var appProjectRef = Rally.util.Ref.getRelativeUri(context.getProject());
-        console.log(globalProjectRef, appProjectRef); //it does not matter where in Rally the same user is currently logged in.
+        //var appProjectRef = Rally.util.Ref.getRelativeUri(context.getProject());
+        //console.log(globalProjectRef, appProjectRef); //it does not matter where in Rally the same user is currently logged in.
         /*
         per http://help.rallydev.com/apps/2.0rc3/doc/#!/guide/context:
          getGlobalContext - The global page context. Usually the same, but may be different if the app is scoped to a specific project.
         */
-        same = globalProjectRef === appProjectRef;
+
+        var otherProjectRef = '/project/14686098099'; //first Project-SDK2
+
+        var newContext = Ext.create(Rally.app.Context, {
+               initialValues: {
+                   project: otherProjectRef
+               }
+        });
+        this.setContext(newContext);
+        context = this.getContext();
+        console.log(context.getProject());
+        console.log(globalContext.getProject()); //returns obj
+
+
+        var same = globalProjectRef === Rally.util.Ref.getRelativeUri(context.getProject());
         if(same) {
-            this._displayContextValue('Global project ' + globalContext.getProject().Name + ' is the same as app project ' + context.getProject().Name);
+            this._displayContextValue('Global project ' + globalProjectRef + ' is the same as app project ' + context.getProject());
         }
         else{
-            this._displayContextValue('Global project ' + globalContext.getProject().Name + ' is different from app project scope ' + context.getProject().Name);
+            this._displayContextValue('Global project ' + globalProjectRef + ' is different from app project scope ' + context.getProject());
         }
 
 
