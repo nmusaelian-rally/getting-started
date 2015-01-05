@@ -9,7 +9,7 @@ Ext.define('Rally.gettingstarted.DataModels', {
      * _getStoryModel should be called here
      */
     launch: function() {
-
+        this._getStoryModel();
     },
 
     /**
@@ -17,7 +17,12 @@ Ext.define('Rally.gettingstarted.DataModels', {
      * When complete, call _createStory
      */
     _getStoryModel: function() {
-        
+        console.log('retrieving data model...');
+        Rally.data.ModelFactory.getModel({
+            type: 'UserStory',
+            success: this._createStory,  //Uncaught TypeError: Cannot read property 'substring' of undefined if used perens this._createStory()
+            scope: this
+        });
     },
 
     /**
@@ -26,7 +31,14 @@ Ext.define('Rally.gettingstarted.DataModels', {
      * When complete, call _readStory
      */
     _createStory: function(model) {
-
+         var newStory = Ext.create(model,{
+             Name:'some appsdk2 story'
+         });
+        console.log('creating a new story...') ;
+        newStory.save({
+            callback: this._readStory,
+            scope: this
+        })
     },
 
     /**
@@ -35,7 +47,19 @@ Ext.define('Rally.gettingstarted.DataModels', {
      * When complete call _printStory
      */
     _readStory: function(story, operation) {
-        var model = story.self;
+        if(operation.wasSuccessful()){
+            console.log('created story successfully...\nreading the story...') ;
+            var model = story.self;
+            //model's load method:   https://help.rallydev.com/apps/2.0rc3/doc/#!/api/Rally.domain.WsapiModel-static-method-load
+            //Asynchronously load a model instance by id
+            model.load(story.getId(),{        //http://help.rallydev.com/apps/2.0rc3/doc/#!/api/Ext.data.Model-method-getId
+                fetch: ['FormattedID','PlanEstimate'] ,
+                callback: this._printStory,
+                scope: this
+            })
+        }
+
+
     },
 
     /**
@@ -45,7 +69,10 @@ Ext.define('Rally.gettingstarted.DataModels', {
      * Call _updateStory when done.
      */
     _printStory: function(story, operation) {
-
+          if(operation.wasSuccessful()){
+              console.log('FormattedID', story.get('FormattedID')) ;
+              this._updateStory(story);
+          }
     },
 
     /**
@@ -54,7 +81,24 @@ Ext.define('Rally.gettingstarted.DataModels', {
      * When complete call _deleteStory
      */
     _updateStory: function(story) {
+        story.set('PlanEstimate', 5);
+        console.log('updating story...');
+        story.save({
+            callback: this._displayStory,
+            scope: this
+        })
+    },
 
+    _displayStory:function(story,operation) {
+        if(operation.wasSuccessful()){
+           this.add({
+               xtype: 'component',
+               id: 'story-info',
+               itemId: 'story-info',
+               html:  'FormattedID: ' + story.get('FormattedID') + ' PlanEstimate: ' + story.get('PlanEstimate')
+           });
+           this._deleteStory(story);
+        }
     },
 
     /**
@@ -62,7 +106,21 @@ Ext.define('Rally.gettingstarted.DataModels', {
      * The model's destroy method should be useful here.
      * When complete console.log a success message.
      */
-    _deleteStory: function(story, operation) {
+    _deleteStory: function(story) {
+            console.log('deleting story...');
+            story.destroy({
+                callback: this._done,
+                scope: this
+            });
+    },
+
+    _done:function(story, operation){
+        if(operation.wasSuccessful()){
+            if(this.down('#story-info')) {
+                Ext.getCmp('story-info').update('story is deleted');
+            }
+            console.log('done!')
+        }
 
     }
 });
